@@ -39,21 +39,23 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ file, onLoadSuccess, onTextExtrac
   };
 
   return (
-    <div className="flex-1 bg-gray-100 p-4 overflow-auto">
-      <Document
-        file={file}
-        onLoadSuccess={handleLoadSuccess}
-        className="flex flex-col items-center"
-      >
-        {Array.from(new Array(numPages), (_, index) => (
-          <Page
-            key={`page_${index + 1}`}
-            pageNumber={index + 1}
-            className="mb-4 shadow-lg"
-            width={800}
-          />
-        ))}
-      </Document>
+    <div className="w-1/2 bg-gray-100 overflow-hidden">
+      <div className="h-full overflow-y-auto p-4">
+        <Document
+          file={file}
+          onLoadSuccess={handleLoadSuccess}
+          className="flex flex-col items-center"
+        >
+          {Array.from(new Array(numPages), (_, index) => (
+            <Page
+              key={`page_${index + 1}`}
+              pageNumber={index + 1}
+              className="mb-4 shadow-lg"
+              width={Math.min(800, window.innerWidth / 2 - 64)}
+            />
+          ))}
+        </Document>
+      </div>
     </div>
   );
 };

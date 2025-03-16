@@ -81,7 +81,7 @@ function App() {
           </div>
         </div>
       ) : (
-        <div className="flex h-screen">
+        <div className="flex h-screen overflow-hidden">
           <PdfViewer 
             file={file} 
             onLoadSuccess={(numPages) => setNumPages(numPages)}

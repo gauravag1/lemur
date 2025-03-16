@@ -50,7 +50,7 @@ async function callOllama(request: OllamaRequest): Promise<string> {
 export async function generateSummary(pdfText: string): Promise<string> {
   return callOllama({
     model: 'gemma3:4b',
-    prompt: `Analyze this real estate inspection document and provide a brief summary using markdown formatting.
+    prompt: `Analyze this real estate inspection document and provide a brief summary using markdown formatting (not more than 10 sentences).
 
 ## Property Overview
 - [1-2 key details about property type/size]
