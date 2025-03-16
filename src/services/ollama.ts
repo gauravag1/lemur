@@ -10,6 +10,11 @@ interface OllamaRequest {
   stream: boolean;
 }
 
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 async function callOllama(request: OllamaRequest): Promise<string> {
   try {
     // First check if Ollama is running
@@ -50,7 +55,7 @@ async function callOllama(request: OllamaRequest): Promise<string> {
 export async function generateSummary(pdfText: string): Promise<string> {
   return callOllama({
     model: 'gemma3:4b',
-    prompt: `Analyze this real estate inspection document and provide a brief summary using markdown formatting (not more than 10 sentences).
+    prompt: `Analyze this real estate inspection document and provide a concise summary using markdown formatting (not more than 10 sentences).
 
 ## Property Overview
 - [1-2 key details about property type/size]
@@ -62,24 +67,24 @@ export async function generateSummary(pdfText: string): Promise<string> {
 - [List 2-3 key recommendations]
 
 Document text: ${pdfText}`,
-    system: "You are a real estate inspection document analyzer. Use markdown formatting for headers and bullet points. Be clear and concise.",
+    system: "You are a real estate inspection document analyzer. Use markdown formatting for headers and bullet points. Be clear and concise. Do NOT ask the user follow up questions.",
     stream: false,
   });
 }
 
-export async function generateChatResponse(question: string, pdfText: string): Promise<string> {
+export async function generateChatResponse(question: string, pdfText: string, chatHistory: Message[] = []): Promise<string> {
+    console.log(chatHistory);
   return callOllama({
     model: 'gemma3:4b',
     prompt: `Given this inspection document: "${pdfText}"
 
-Question: ${question}
+Previous conversation:
+${chatHistory.map(msg => `${msg.role.toUpperCase()}: ${msg.content}`).join('\n')}
 
-Please provide a helpful and concise answer based on the document content. The output should not be more than 5 sentences and contain the following sections:
-- Summary of the document that relates to the question
-- Key findings and important details
-- Recommendations for the homeowner
-- Any other relevant information`,
-    system: "You are a helpful real estate inspection document analyzer. Answer questions based on the document content only.",
+Current question: ${question}
+
+Please provide a helpful and concise answer based on the document content and previous conversation context. Format your response using markdown.`,
+    system: "You are a helpful real estate inspection document analyzer. Answer questions based on the document content and conversation history.",
     stream: false,
   });
 } 

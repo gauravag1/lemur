@@ -10,10 +10,17 @@ import { generateChatResponse } from './services/ollama';
 // Set worker URL for PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
+// Add new interface for Message
+interface Message {
+  text: string;
+  isBot: boolean;
+  role: 'user' | 'assistant';
+}
+
 function App() {
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<{ text: string; isBot: boolean }[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [pdfText, setPdfText] = useState<string>('');
 
@@ -27,7 +34,12 @@ function App() {
     e.preventDefault();
     if (message.trim()) {
       // Add user message
-      setMessages(prev => [...prev, { text: message, isBot: false }]);
+      const userMessage: Message = { 
+        text: message, 
+        isBot: false, 
+        role: 'user' 
+      };
+      setMessages(prev => [...prev, userMessage]);
       
       // Store message and clear input
       const userQuestion = message;
@@ -35,24 +47,43 @@ function App() {
 
       try {
         // Add loading message
-        setMessages(prev => [...prev, { 
+        const loadingMessage: Message = { 
           text: "Analyzing document...", 
-          isBot: true 
-        }]);
+          isBot: true,
+          role: 'assistant'
+        };
+        setMessages(prev => [...prev, loadingMessage]);
+
+        // Convert messages to format expected by generateChatResponse
+        const chatHistory = messages.map(msg => ({
+          role: msg.role,
+          content: msg.text
+        }));
 
         // Get AI response
-        const response = await generateChatResponse(userQuestion, pdfText);
+        const response = await generateChatResponse(userQuestion, pdfText, chatHistory);
         
         // Replace loading message with actual response
+        const assistantMessage: Message = {
+          text: response,
+          isBot: true,
+          role: 'assistant'
+        };
+        
         setMessages(prev => [
           ...prev.slice(0, -1), // Remove loading message
-          { text: response, isBot: true }
+          assistantMessage
         ]);
       } catch (error) {
         // Replace loading message with error
+        const errorMessage: Message = {
+          text: "Sorry, I encountered an error while analyzing the document.",
+          isBot: true,
+          role: 'assistant'
+        };
         setMessages(prev => [
           ...prev.slice(0, -1), // Remove loading message
-          { text: "Sorry, I encountered an error while analyzing the document.", isBot: true }
+          errorMessage
         ]);
       }
     }
