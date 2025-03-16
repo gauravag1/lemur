@@ -5,6 +5,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import PdfViewer from './components/PdfViewer';
 import RightPanel from './components/RightPanel';
+import { generateChatResponse } from './services/ollama';
 
 // Set worker URL for PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
@@ -14,6 +15,7 @@ function App() {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<{ text: string; isBot: boolean }[]>([]);
   const [numPages, setNumPages] = useState<number | null>(null);
+  const [pdfText, setPdfText] = useState<string>('');
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files?.[0]) {
@@ -21,18 +23,38 @@ function App() {
     }
   };
 
-  const handleMessageSubmit = (e: React.FormEvent) => {
+  const handleMessageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
-      setMessages([...messages, { text: message, isBot: false }]);
-      // Simulate AI response
-      setTimeout(() => {
+      // Add user message
+      setMessages(prev => [...prev, { text: message, isBot: false }]);
+      
+      // Store message and clear input
+      const userQuestion = message;
+      setMessage('');
+
+      try {
+        // Add loading message
         setMessages(prev => [...prev, { 
-          text: "I'm analyzing the document and will provide relevant information shortly.", 
+          text: "Analyzing document...", 
           isBot: true 
         }]);
-      }, 1000);
-      setMessage('');
+
+        // Get AI response
+        const response = await generateChatResponse(userQuestion, pdfText);
+        
+        // Replace loading message with actual response
+        setMessages(prev => [
+          ...prev.slice(0, -1), // Remove loading message
+          { text: response, isBot: true }
+        ]);
+      } catch (error) {
+        // Replace loading message with error
+        setMessages(prev => [
+          ...prev.slice(0, -1), // Remove loading message
+          { text: "Sorry, I encountered an error while analyzing the document.", isBot: true }
+        ]);
+      }
     }
   };
 
@@ -62,7 +84,8 @@ function App() {
         <div className="flex h-screen">
           <PdfViewer 
             file={file} 
-            onLoadSuccess={(numPages) => setNumPages(numPages)} 
+            onLoadSuccess={(numPages) => setNumPages(numPages)}
+            onTextExtracted={(text) => setPdfText(text)}
           />
           <RightPanel
             numPages={numPages}
@@ -70,6 +93,7 @@ function App() {
             messages={messages}
             onMessageChange={(newMessage) => setMessage(newMessage)}
             onMessageSubmit={handleMessageSubmit}
+            pdfText={pdfText}
           />
         </div>
       )}

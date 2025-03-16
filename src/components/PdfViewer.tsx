@@ -9,14 +9,33 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface PdfViewerProps {
   file: File;
   onLoadSuccess: (numPages: number) => void;
+  onTextExtracted: (text: string) => void;
 }
 
-const PdfViewer: React.FC<PdfViewerProps> = ({ file, onLoadSuccess }) => {
+const PdfViewer: React.FC<PdfViewerProps> = ({ file, onLoadSuccess, onTextExtracted }) => {
   const [numPages, setNumPages] = useState<number>(0);
 
-  const handleLoadSuccess = ({ numPages }: { numPages: number }) => {
+  const handleLoadSuccess = async ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
     onLoadSuccess(numPages);
+
+    try {
+      // Load the PDF document
+      const pdf = await pdfjs.getDocument(URL.createObjectURL(file)).promise;
+      
+      // Extract text from all pages
+      let fullText = '';
+      for (let i = 1; i <= numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item: any) => item.str).join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      onTextExtracted(fullText);
+    } catch (error) {
+      console.error('Error extracting PDF text:', error);
+    }
   };
 
   return (

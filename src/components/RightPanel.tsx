@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bot, Send } from 'lucide-react';
+import { generateSummary } from '../services/ollama';
 
 interface RightPanelProps {
   numPages: number | null;
@@ -7,6 +8,7 @@ interface RightPanelProps {
   messages: Array<{ text: string; isBot: boolean }>;
   onMessageChange: (message: string) => void;
   onMessageSubmit: (e: React.FormEvent) => void;
+  pdfText: string;
 }
 
 const RightPanel: React.FC<RightPanelProps> = ({
@@ -14,19 +16,72 @@ const RightPanel: React.FC<RightPanelProps> = ({
   message,
   messages,
   onMessageChange,
-  onMessageSubmit
+  onMessageSubmit,
+  pdfText
 }) => {
+  const [summary, setSummary] = useState<{
+    text: string;
+    loading: boolean;
+    error?: string;
+  }>({
+    text: 'Loading...',
+    loading: true,
+  });
+
+  useEffect(() => {
+    const fetchSummary = async () => {
+      if (pdfText) {
+        try {
+          setSummary(prev => ({ ...prev, loading: true, error: undefined }));
+          const summaryText = await generateSummary(pdfText);
+          
+          if (summaryText.startsWith('Error:')) {
+            setSummary({
+              text: '',
+              loading: false,
+              error: summaryText
+            });
+            return;
+          }
+
+          setSummary({
+            text: summaryText,
+            loading: false,
+          });
+        } catch (error) {
+          setSummary({
+            text: '',
+            loading: false,
+            error: 'Failed to generate summary. Please check if Ollama is running.'
+          });
+        }
+      }
+    };
+
+    fetchSummary();
+  }, [pdfText]);
+
   return (
     <div className="w-96 bg-white border-l border-gray-200 flex flex-col">
       {/* Document Summary */}
       <div className="p-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold mb-2">Document Summary</h2>
-        <div className="space-y-2 text-sm text-gray-600">
-          <p>• Property Type: Single Family Home</p>
-          <p>• Inspection Date: March 15, 2024</p>
-          <p>• Total Pages: {numPages}</p>
-          <p>• Key Findings: 3 major issues identified</p>
-        </div>
+        {summary.error ? (
+          <div className="text-red-500 text-sm p-2 bg-red-50 rounded">
+            {summary.error}
+          </div>
+        ) : (
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>• Total Pages: {numPages}</p>
+            <div className="whitespace-pre-wrap">
+              {summary.loading ? (
+                <p className="text-blue-500">Generating summary...</p>
+              ) : (
+                summary.text
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Chat Interface */}
