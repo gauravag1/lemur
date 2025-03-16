@@ -50,8 +50,19 @@ async function callOllama(request: OllamaRequest): Promise<string> {
 export async function generateSummary(pdfText: string): Promise<string> {
   return callOllama({
     model: 'gemma3:4b',
-    prompt: `You are a real estate inspection document analyzer. Please provide a concise summary of the key findings and important details from this inspection document: ${pdfText}`,
-    system: "You are a helpful real estate inspection document analyzer.",
+    prompt: `Analyze this real estate inspection document and provide a brief summary using markdown formatting.
+
+## Property Overview
+- [1-2 key details about property type/size]
+
+## Major Issues
+- [List 3-4 most important issues found]
+
+## Recommendations
+- [List 2-3 key recommendations]
+
+Document text: ${pdfText}`,
+    system: "You are a real estate inspection document analyzer. Use markdown formatting for headers and bullet points. Be clear and concise.",
     stream: false,
   });
 }
@@ -64,7 +75,7 @@ export async function generateChatResponse(question: string, pdfText: string): P
 Question: ${question}
 
 Please provide a helpful and concise answer based on the document content. The output should not be more than 5 sentences and contain the following sections:
-- Summary of the document
+- Summary of the document that relates to the question
 - Key findings and important details
 - Recommendations for the homeowner
 - Any other relevant information`,

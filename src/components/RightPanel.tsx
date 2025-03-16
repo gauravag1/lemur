@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Bot, Send } from 'lucide-react';
 import { generateSummary } from '../services/ollama';
+import ReactMarkdown from 'react-markdown';
 
 interface RightPanelProps {
   numPages: number | null;
@@ -73,11 +74,11 @@ const RightPanel: React.FC<RightPanelProps> = ({
         ) : (
           <div className="space-y-2 text-sm text-gray-600">
             <p>• Total Pages: {numPages}</p>
-            <div className="whitespace-pre-wrap">
+            <div className="prose prose-sm max-w-none">
               {summary.loading ? (
                 <p className="text-blue-500">Generating summary...</p>
               ) : (
-                summary.text
+                <ReactMarkdown>{summary.text}</ReactMarkdown>
               )}
             </div>
           </div>
