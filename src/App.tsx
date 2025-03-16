@@ -41,18 +41,17 @@ function App() {
       };
       setMessages(prev => [...prev, userMessage]);
       
-      // Store message and clear input
       const userQuestion = message;
       setMessage('');
 
       try {
-        // Add loading message
-        const loadingMessage: Message = { 
-          text: "Analyzing document...", 
+        // Add initial assistant message
+        const assistantMessage: Message = {
+          text: '',
           isBot: true,
           role: 'assistant'
         };
-        setMessages(prev => [...prev, loadingMessage]);
+        setMessages(prev => [...prev, assistantMessage]);
 
         // Convert messages to format expected by generateChatResponse
         const chatHistory = messages.map(msg => ({
@@ -60,30 +59,31 @@ function App() {
           content: msg.text
         }));
 
-        // Get AI response
-        const response = await generateChatResponse(userQuestion, pdfText, chatHistory);
-        
-        // Replace loading message with actual response
-        const assistantMessage: Message = {
-          text: response,
-          isBot: true,
-          role: 'assistant'
-        };
-        
-        setMessages(prev => [
-          ...prev.slice(0, -1), // Remove loading message
-          assistantMessage
-        ]);
+        // Stream the response
+        await generateChatResponse(
+          userQuestion, 
+          pdfText, 
+          chatHistory,
+          (partialResponse) => {
+            setMessages(prev => [
+              ...prev.slice(0, -1),
+              {
+                text: partialResponse,
+                isBot: true,
+                role: 'assistant'
+              }
+            ]);
+          }
+        );
       } catch (error) {
-        // Replace loading message with error
-        const errorMessage: Message = {
-          text: "Sorry, I encountered an error while analyzing the document.",
-          isBot: true,
-          role: 'assistant'
-        };
+        // Update with error message
         setMessages(prev => [
-          ...prev.slice(0, -1), // Remove loading message
-          errorMessage
+          ...prev.slice(0, -1),
+          {
+            text: "Sorry, I encountered an error while analyzing the document.",
+            isBot: true,
+            role: 'assistant'
+          }
         ]);
       }
     }

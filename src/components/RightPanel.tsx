@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Bot, Send, FileText, MessageSquare } from 'lucide-react';
 import { generateSummary } from '../services/ollama';
 import ReactMarkdown from 'react-markdown';
@@ -29,39 +29,49 @@ const RightPanel: React.FC<RightPanelProps> = ({
     text: 'Loading...',
     loading: true,
   });
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchSummary = async () => {
       if (pdfText) {
         try {
           setSummary(prev => ({ ...prev, loading: true, error: undefined }));
-          const summaryText = await generateSummary(pdfText);
           
-          if (summaryText.startsWith('Error:')) {
-            setSummary({
-              text: '',
-              loading: false,
-              error: summaryText
-            });
-            return;
-          }
-
-          setSummary({
-            text: summaryText,
-            loading: false,
-          });
-        } catch (error) {
-          setSummary({
+          // Start with empty summary
+          setSummary(prev => ({
+            ...prev,
             text: '',
+            loading: true,
+          }));
+
+          await generateSummary(
+            pdfText,
+            (partialSummary) => {
+              setSummary(prev => ({
+                ...prev,
+                text: partialSummary,
+                loading: false,
+              }));
+            }
+          );
+        } catch (error) {
+          setSummary(prev => ({
+            ...prev,
             loading: false,
             error: 'Failed to generate summary. Please check if Ollama is running.'
-          });
+          }));
         }
       }
     };
 
     fetchSummary();
   }, [pdfText]);
+
+  useEffect(() => {
+    if (activeTab === 'chat') {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, activeTab]);
 
   return (
     <div className="w-1/2 bg-white border-l border-gray-200 flex flex-col overflow-hidden">
@@ -142,6 +152,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
                   </div>
                 </div>
               ))}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
