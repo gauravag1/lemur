@@ -5,7 +5,7 @@ import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import PdfViewer from './components/PdfViewer';
 import RightPanel from './components/RightPanel';
-import { generateChatResponse } from './services/ollama';
+import { generateChatResponse, generateSummary } from './services/openrouter';
 
 // Set worker URL for PDF.js
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Bot, Send, FileText, MessageSquare } from 'lucide-react';
-import { generateSummary } from '../services/ollama';
+import { generateSummary } from '../services/openrouter';
 import ReactMarkdown from 'react-markdown';
 
 interface RightPanelProps {
@@ -46,7 +46,7 @@ const RightPanel: React.FC<RightPanelProps> = ({
 
           await generateSummary(
             pdfText,
-            (partialSummary) => {
+            (partialSummary: string) => {
               setSummary(prev => ({
                 ...prev,
                 text: partialSummary,
@@ -55,10 +55,11 @@ const RightPanel: React.FC<RightPanelProps> = ({
             }
           );
         } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
           setSummary(prev => ({
             ...prev,
             loading: false,
-            error: 'Failed to generate summary. Please check if Ollama is running.'
+            error: `Failed to generate summary: ${errorMessage}. Please check your API key and network connection.`
           }));
         }
       }
